@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Co-Pilot | Canlı Bitki Durumu</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap');
+    :root { --bg:#f6f7f2; --surface:#fff; --line:#d7e0cf; --ink:#1f2a22; --muted:#687368; --brand:#2f6b4f; --ok:#1f8f4c; --warn:#b97811; --critical:#bd4a24; --danger:#9f231f; --radius:16px; --shadow:0 18px 36px rgba(22,34,24,.09);} 
+    *{box-sizing:border-box} body{margin:0;font-family:Manrope,sans-serif;background:radial-gradient(900px 500px at -10% -10%,#deeee1 0,transparent 62%),radial-gradient(900px 500px at 115% -15%,#f0e3d3 0,transparent 62%),var(--bg);color:var(--ink)}
+    .page{max-width:1220px;margin:0 auto;padding:20px;display:grid;grid-template-columns:320px 1fr;gap:18px}.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+    .left{padding:16px;position:sticky;top:16px;align-self:start;display:grid;gap:12px}.brand{display:flex;gap:10px;align-items:center}.mark{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;color:#fff;font-weight:800;background:linear-gradient(140deg,#2f6b4f,#25523d)}
+    .brand h1{margin:0;font-size:1rem}.brand p{margin:2px 0 0;color:var(--muted);font-size:.8rem}.live,.box{border:1px solid var(--line);border-radius:12px;background:#fbfdf9;padding:10px}.live{display:flex;justify-content:space-between;align-items:center;font-size:.82rem}
+    .dot{width:10px;height:10px;border-radius:999px;background:var(--ok);display:inline-block;margin-right:6px}.box h2{margin:0 0 8px;font-size:.95rem}.meta{font-size:.82rem;color:#425043;line-height:1.4}
+    .select{width:100%;padding:9px;border:1px solid var(--line);border-radius:10px;background:#fff}.switch{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:10px;font-size:.84rem;background:#fff}
+    .switch input{width:18px;height:18px;accent-color:var(--brand)}.btn{border:1px solid #b9d1bf;background:#fff;color:#2f6b4f;border-radius:10px;padding:10px 12px;font:inherit;font-weight:700;cursor:pointer}
+    .btn.primary{background:linear-gradient(140deg,#2f6b4f,#25523d);color:#fff;border-color:#25523d}
+    .btn.soft{background:#f7fbf7;color:#2f6b4f}
+    .btn:disabled{background:#f3f5f1;color:#9aa49b;border-color:#d9e0d4;cursor:not-allowed}
+    .flow-kicker{display:inline-flex;align-items:center;gap:6px;border:1px solid #cddacb;border-radius:999px;background:#f6faf5;color:#45624f;padding:4px 9px;font-size:.72rem;font-weight:800;letter-spacing:.15px;text-transform:uppercase}
+    .hint{font-size:.79rem;color:#5e6f61;line-height:1.4}
+    .stack{display:grid;gap:8px}
+    .main{display:grid;gap:16px}.hero{border-radius:18px;background:linear-gradient(125deg,#2c6449 0,#3d7a5d 52%,#7c8f5a 100%);color:#f5f9f2;padding:18px}.hero h2{margin:0}.hero p{margin:8px 0 0;color:#dbecdd}
+    .top{margin-top:12px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.chip{border:1px solid rgba(245,251,243,.28);border-radius:12px;background:rgba(255,255,255,.08);padding:10px}.chip .k{font-size:.76rem;color:#d7ead8}.chip .v{font-weight:800;margin-top:4px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.section{padding:14px;display:grid;gap:10px}.section h3{margin:0}.section p{margin:0;color:var(--muted);font-size:.85rem}
+    .live-stack{display:grid;gap:16px}
+    .tabs{display:flex;gap:8px;flex-wrap:wrap}
+    .tab-btn{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 12px;font:inherit;font-size:.82rem;font-weight:700;color:#2b3a30;cursor:pointer}
+    .tab-btn.active{background:linear-gradient(140deg,#2f6b4f,#25523d);color:#fff;border-color:#2f6b4f}
+    .tab-panel{display:none}
+    .tab-panel.active{display:block}
+    .vitals{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.vital{border:1px solid var(--line);border-radius:12px;background:#fbfdf9;padding:10px}.vital .l{font-size:.78rem;color:var(--muted)}.vital .v{font-size:1.12rem;font-weight:800;margin-top:4px}
+    .trend-box{border:1px solid var(--line);border-radius:12px;background:#fbfdf9;padding:10px;display:grid;gap:8px}
+    .trend-head{font-size:.78rem;color:#5e6b61;font-weight:800;letter-spacing:.15px;text-transform:uppercase}
+    .trend-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+    .trend-item{border:1px solid var(--line);border-radius:10px;background:#fff;padding:9px}
+    .trend-item .k{font-size:.73rem;color:#687368}
+    .trend-item .v{margin-top:5px;font-size:.84rem;font-weight:700;line-height:1.35;color:#243126}
+    .badge{display:inline-flex;border-radius:999px;padding:5px 10px;font-size:.78rem;font-weight:700;border:1px solid transparent}.ok{background:#dff5e8;color:#19653b;border-color:#bce7cb}.warning{background:#fff1d7;color:#7d4c06;border-color:#f2d49d}.critical{background:#ffe4d6;color:#8f2f15;border-color:#efbea8}.emergency{background:#ffdedd;color:#8a1f1d;border-color:#efb2b1}
+    .advice-flow{display:grid;gap:10px}
+    .urgency{display:none;align-items:center;gap:8px;border-radius:10px;padding:8px 10px;font-size:.8rem;font-weight:700}
+    .urgency.show{display:flex}
+    .urgency.warning{background:#fff4df;color:#8b5308;border:1px solid #f0d29b}
+    .urgency.critical{background:#ffe5da;color:#8f2f15;border:1px solid #eab7a4}
+    .urgency.emergency{background:#ffdede;color:#8a1f1d;border:1px solid #e7aaaa}
+    .highlight{display:grid;grid-template-columns:72px 1fr auto;gap:12px;padding:12px;border:1px solid var(--line);border-radius:12px;background:#fffef9}
+    .visual{width:72px;height:72px;border-radius:12px;background:#eef6ee;display:grid;place-items:center;font-size:34px}
+    .highlight h4{margin:0;font-size:1.05rem}
+    .highlight p{margin:6px 0 0;font-size:.84rem;color:#4c584e}
+    .cta{align-self:center;border:1px solid #d7e0cf;border-radius:999px;background:#f6faf5;color:#355643;padding:9px 14px;font:inherit;font-size:.78rem;font-weight:800;letter-spacing:.2px;cursor:default;pointer-events:none;box-shadow:none}
+    .next-steps{display:grid;gap:8px}
+    .step{display:grid;grid-template-columns:28px 1fr;gap:8px;padding:9px;border:1px solid var(--line);border-radius:10px;background:#fff}
+    .step .n{width:28px;height:28px;border-radius:999px;background:#e8f3eb;color:#25513c;display:grid;place-items:center;font-size:.8rem;font-weight:800}
+    .step b{font-size:.86rem}
+    .step span{display:block;font-size:.8rem;color:#506050;margin-top:3px;line-height:1.35}
+    .comment{border:1px solid var(--line);border-radius:12px;background:#fcfdf9;padding:11px;font-size:.83rem;line-height:1.45}
+    .comment h5{margin:0 0 6px;font-size:.78rem;color:#5b675d;letter-spacing:.2px;text-transform:uppercase}
+    .comment ul{margin:0;padding-left:18px;display:grid;gap:5px}
+    .comment li{line-height:1.38}
+    .ai-box{border:1px solid var(--line);border-radius:12px;background:#fff;padding:11px;display:grid;gap:8px}
+    .ai-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+    .ai-kicker{font-size:.72rem;color:#5a675d;letter-spacing:.18px;text-transform:uppercase;font-weight:800}
+    .ai-note{font-size:.76rem;color:#6c776e}
+    .ai-text{font-size:.84rem;line-height:1.5;color:#243126;white-space:pre-wrap}
+    .ai-text.subtle{color:#5f6d62}
+    .ai-headline{border:1px solid var(--line);border-radius:12px;background:#f8fbf8;padding:10px 12px;font-size:.95rem;font-weight:800;color:#274334}
+    .ai-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+    .ai-card{border:1px solid var(--line);border-radius:12px;background:#fff;padding:10px}
+    .ai-card .l{font-size:.72rem;color:#667267;letter-spacing:.14px;text-transform:uppercase;font-weight:800}
+    .ai-card .t{margin-top:5px;font-size:.84rem;line-height:1.45;color:#243126}
+    .ai-qa{display:grid;gap:8px}
+    .ai-input{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#fff;font:inherit;color:var(--ink)}
+    .ai-answer{border:1px solid var(--line);border-radius:12px;background:#fcfdf9;padding:10px 12px;font-size:.84rem;line-height:1.5;color:#243126}
+    .impact{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+    .impact .item{border:1px solid var(--line);border-radius:12px;background:#fff;padding:11px}
+    .impact .item .k{font-size:.76rem;color:var(--muted)}
+    .impact .item b{display:block;margin-top:6px;font-size:1.12rem}
+    .delta{margin-top:6px;font-size:.75rem;color:#516252}
+    .wf-decision{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:12px;background:#fbfdf9;padding:10px 12px}
+    .wf-title{font-size:.82rem;color:#566459}
+    .wf-main{margin-top:3px;font-size:1rem;font-weight:800}
+    .wf-pill{border-radius:999px;padding:7px 11px;font-size:.78rem;font-weight:800}
+    .wf-pill.ok{background:#dff5e8;color:#19653b}
+    .wf-pill.warning{background:#fff1d7;color:#7d4c06}
+    .wf-pill.critical{background:#ffe4d6;color:#8f2f15}
+    .wf-pill.emergency{background:#ffdede;color:#8a1f1d}
+    .wf-brief{border:1px solid var(--line);border-radius:12px;background:#fff;padding:11px}
+    .wf-brief h5{margin:0 0 7px;font-size:.78rem;color:#5b675d;letter-spacing:.2px;text-transform:uppercase}
+    .wf-brief ul{margin:0;padding-left:18px;display:grid;gap:5px}
+    .wf-brief li{font-size:.82rem;line-height:1.4}
+    .wf-warning{display:none;border:1px solid #efb2b1;border-radius:12px;background:#fff1f0;padding:11px;color:#8a1f1d}
+    .wf-warning.show{display:block}
+    .wf-warning h5{margin:0 0 7px;font-size:.78rem;letter-spacing:.2px;text-transform:uppercase}
+    .wf-warning ul{margin:0;padding-left:18px;display:grid;gap:5px}
+    .wf-warning li{font-size:.82rem;line-height:1.4}
+    .air-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+    .air-card{border:1px solid var(--line);border-radius:12px;background:#fff;padding:10px}
+    .air-card .k{font-size:.74rem;color:var(--muted)}
+    .air-card .v{font-size:1.02rem;font-weight:800;margin-top:5px}
+    .air-meta{display:flex;gap:8px;flex-wrap:wrap}
+    .air-tag{border:1px solid var(--line);background:#fbfdf9;border-radius:999px;padding:6px 10px;font-size:.76rem;color:#4a5b4c}
+    .toast{position:fixed;right:18px;bottom:18px;background:#1f3a2c;color:#e9f8ec;padding:10px 12px;border-radius:10px;font-size:.82rem;opacity:0;transform:translateY(8px);transition:.2s;pointer-events:none}.toast.show{opacity:1;transform:translateY(0)}
+    @media (max-width:1080px){.page{grid-template-columns:1fr}.left{position:static}.top{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}.air-grid{grid-template-columns:repeat(2,1fr)}} @media (max-width:680px){.top,.vitals,.impact,.air-grid,.ai-grid,.trend-grid{grid-template-columns:1fr}.highlight{grid-template-columns:1fr}.wf-decision{grid-template-columns:1fr}.ai-head{grid-template-columns:1fr;display:grid}}
+  </style>
+</head>
+<body>
+  <div class="page">
+    <aside class="panel left">
+      <div class="brand"><div class="mark">SC</div><div><h1>Smart Co-Pilot</h1><p>Canlı Bitki Takibi</p></div></div>
+      <div class="live"><div><span class="dot"></span><span id="liveText">Sensör akışı bekleniyor</span></div><small id="lastUpdate">--:--</small></div>
+
+      <section class="box">
+        <div class="flow-kicker">1. adım</div>
+        <h2>Önce demo başlat</h2>
+        <select class="select" id="plantSelect"></select>
+        <div class="meta" id="sensorMeta">Henüz sensör verisi alınmadı.</div>
+        <div style="margin-top:8px;">
+          <select class="select" id="demoScenario">
+            <option value="mixed">Demo: Karışık (önerilen)</option>
+            <option value="normal">Demo: Normal</option>
+            <option value="heatwave">Demo: Isı stresi</option>
+            <option value="drought">Demo: Kuraklık</option>
+            <option value="cold_stress">Demo: Soğuk stresi</option>
+            <option value="hardware_fault">Demo: Donanım arızası</option>
+          </select>
+        </div>
+        <div class="hint">Önce örnek sensör verisini akıt, sonra sistemin önerisini ve etki analizini incele.</div>
+        <div class="stack" style="margin-top:8px;">
+          <button class="btn primary" id="demoBtn">Demo Veriyi Başlat</button>
+          <button class="btn soft" id="airBtn">Hava Kalitesini Güncelle</button>
+        </div>
+      </section>
+
+      <section class="box">
+        <div class="flow-kicker">2. adım</div>
+        <h2>Sonra senaryoyu dene</h2>
+        <div class="hint">Aşağıdaki seçimler demo verisi geldikten sonra daha anlamlı sonuç verir.</div>
+        <label class="switch">Fan açık <input type="checkbox" id="wfFan" /></label>
+        <label class="switch">Sulama pompası açık <input type="checkbox" id="wfWatering" /></label>
+        <label class="switch">Su doldurma pompası açık <input type="checkbox" id="wfWater" /></label>
+        <button class="btn soft" id="whatIfBtn">Etkisini Hesapla</button>
+      </section>
+    </aside>
+
+    <main class="main">
+      <section class="hero panel" style="border:none;box-shadow:none;">
+        <h2>Bitkinin şu anki durumu</h2>
+        <p>Sensörden gelen son veriye göre önerilen en önemli adım en üstte gösterilir.</p>
+        <div class="top">
+          <div class="chip"><div class="k">Genel Durum</div><div class="v" id="statusLabel">-</div></div>
+          <div class="chip"><div class="k">Bitki</div><div class="v" id="plantLabel">-</div></div>
+          <div class="chip"><div class="k">Mevcut Senaryo</div><div class="v" id="scenarioLabel">-</div></div>
+          <div class="chip"><div class="k">Son Veri</div><div class="v" id="heroTime">-</div></div>
+        </div>
+      </section>
+
+      <section class="tabs panel section">
+        <button class="tab-btn active" data-tab="live">Canlı Durum</button>
+        <button class="tab-btn" data-tab="whatif">Ne Olur? (What-if)</button>
+        <button class="tab-btn" data-tab="air">Hava Kalitesi</button>
+      </section>
+
+      <section class="tab-panel active" data-panel="live">
+      <section class="live-stack">
+        <section class="grid">
+          <article class="panel section">
+            <h3>Anlık Değerler</h3><p>Sensörden gelen mevcut ölçümler.</p>
+          <div class="vitals">
+            <div class="vital"><div class="l">Sıcaklık</div><div class="v" id="vTemp">-</div></div>
+            <div class="vital"><div class="l">Nem</div><div class="v" id="vHumidity">-</div></div>
+            <div class="vital"><div class="l">Su Seviyesi</div><div class="v" id="vWater">-</div></div>
+          </div>
+          <div class="trend-box">
+            <div class="trend-head">Yaklaşan Risk Tahmini</div>
+            <div class="trend-grid">
+              <div class="trend-item"><div class="k">Sıcaklık</div><div class="v" id="trendTempEta">Henüz veri yok</div></div>
+              <div class="trend-item"><div class="k">Nem</div><div class="v" id="trendHumidityEta">Henüz veri yok</div></div>
+              <div class="trend-item"><div class="k">Su seviyesi</div><div class="v" id="trendWaterEta">Henüz veri yok</div></div>
+            </div>
+          </div>
+          <div><span id="alertBadge" class="badge ok">Durum bekleniyor</span></div>
+        </article>
+
+          <article class="panel section">
+            <h3>Sistemin Önerdiği Adımlar</h3>
+            <div class="advice-flow">
+              <div class="urgency" id="urgencyBar"></div>
+              <div class="highlight" id="highlightCard">
+                <div class="visual" id="highlightVisual">🌿</div>
+                <div><h4 id="highlightTitle">Sensör verisi bekleniyor</h4><p id="highlightDetail">Veri geldiğinde en önemli adım burada gösterilecek.</p></div>
+                <div class="cta" id="highlightCta">Öncelikli Adım</div>
+              </div>
+              <div class="next-steps" id="stepsList"></div>
+              <div class="comment" id="summaryBox">Yorum bekleniyor...</div>
+            </div>
+          </article>
+        </section>
+        <section class="panel section">
+          <div class="ai-box">
+            <div class="ai-head">
+              <div>
+                <div class="ai-kicker">AI Agronomist Note</div>
+                <div class="ai-note" id="geminiMeta">Henüz uzman yorumu üretilmedi.</div>
+              </div>
+              <button class="btn soft" id="geminiBtn">Uzman Yorumu Üret</button>
+            </div>
+            <div class="ai-headline" id="geminiHeadline">Burada teknik özetten farklı olarak, kararı daha sade ve kullanıcı dostu bir uzman diliyle görebilirsin.</div>
+            <div class="ai-grid" id="geminiGrid">
+              <div class="ai-card"><div class="l">Bakış</div><div class="t">Bu alan, kararın daha doğal dille açıklanmış versiyonu için ayrıldı.</div></div>
+              <div class="ai-card"><div class="l">Amaç</div><div class="t">Kullanıcının sistemi teknik detay okumadan hızlıca anlamasına yardımcı olmak.</div></div>
+            </div>
+            <div class="ai-text subtle" id="geminiText">İstersen bu karar için AI destekli örnek uzman yorumu oluşturabilirsin.</div>
+            <div class="ai-qa">
+              <input class="ai-input" id="geminiQuestion" placeholder="Örn: Neden sulama öneriliyor?" />
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="btn soft" id="geminiAskBtn">Soruyu Yanıtla</button>
+              </div>
+              <div class="ai-answer" id="geminiAnswer">Kullanıcı burada “Neden bu öneri verildi?” gibi kısa bir soru sorabilir.</div>
+            </div>
+          </div>
+        </section>
+      </section>
+      </section>
+
+      <section class="panel section tab-panel" data-panel="whatif">
+        <h3>Seçtiğin Değişikliğin Olası Etkisi</h3><p>Yukarıdaki aç/kapat seçimlerine göre kısa vadeli tahmin.</p>
+        <div class="impact">
+          <div class="item"><div class="k">Beklenen sıcaklık</div><b id="wfTemp">-</b><div class="delta" id="wfTempDelta">-</div></div>
+          <div class="item"><div class="k">Beklenen nem</div><b id="wfHumidity">-</b><div class="delta" id="wfHumidityDelta">-</div></div>
+          <div class="item"><div class="k">Beklenen su seviyesi</div><b id="wfWaterLevel">-</b><div class="delta" id="wfWaterDelta">-</div></div>
+        </div>
+        <div class="wf-decision">
+          <div>
+            <div class="wf-title">Beklenen karar sonucu</div>
+            <div class="wf-main" id="wfMain">Tahmin bekleniyor</div>
+          </div>
+          <span id="wfBadge" class="wf-pill ok">-</span>
+        </div>
+        <div class="wf-warning" id="wfWarningBox"></div>
+        <div class="wf-brief" id="wfSummary">Sensör verisi geldikten sonra tahmin burada gösterilir.</div>
+      </section>
+
+      <section class="panel section tab-panel" data-panel="air">
+        <h3>Hava Kalitesi (OpenAQ)</h3>
+        <p>Çevresel hava kalitesi bilgisi (şehir ölçeği).</p>
+        <div class="air-meta">
+          <span class="air-tag" id="airSource">Kaynak: -</span>
+          <span class="air-tag" id="airCity">Şehir: -</span>
+          <span class="air-tag" id="airNote">Not: Veri bekleniyor</span>
+        </div>
+        <div class="air-grid">
+          <div class="air-card"><div class="k">PM2.5</div><div class="v" id="aqPm25">-</div></div>
+          <div class="air-card"><div class="k">PM10</div><div class="v" id="aqPm10">-</div></div>
+          <div class="air-card"><div class="k">O3</div><div class="v" id="aqO3">-</div></div>
+          <div class="air-card"><div class="k">NO2</div><div class="v" id="aqNo2">-</div></div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const $=(id)=>document.getElementById(id);
+    const endpoints={current:'/current',whatIf:'/what-if',plants:'/plants',selectPlant:'/plants/select',demoNext:'/demo/next',air:'/air-quality/openaq',explain:'/ai/explain',ask:'/ai/ask'};
+    const actionVisual={ 'watering-plant':'💧🌱', 'fan-breeze':'🌬️🪴', 'water-refill':'🚰🌿', 'healthy-leaf':'🌿', 'cold-plant':'🥶🪴', 'tool-check':'🛠️🔍' };
+    let whatIfDirty = false;
+    let hasCurrentData = false;
+    let geminiDecisionTimestamp = null;
+    let currentDecisionTimestamp = null;
+
+    function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1700)}
+    function now(){return new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}
+    function badgeClass(level){if(level==='OK')return 'ok'; if(level==='WARNING')return 'warning'; if(level==='CRITICAL')return 'critical'; return 'emergency';}
+    function labelMap(level){return ({OK:'Gayet iyi',WARNING:'Dikkat',CRITICAL:'Kritik',EMERGENCY:'Acil'})[level]||level;}
+
+    async function fetchJson(url,opt={}){const r=await fetch(url,opt);if(r.status===404)return null; if(!r.ok) throw new Error(await r.text()); return r.json();}
+    function setTab(name){
+      document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
+      document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active', p.dataset.panel===name));
+    }
+    function currentWhatIfPayload(){
+      return {
+        fan:$('wfFan').checked,
+        watering_pump:$('wfWatering').checked,
+        water_pump:$('wfWater').checked
+      };
+    }
+    function applyRecommendedWhatIf(cmd={}){
+      $('wfFan').checked=!!cmd.fan;
+      $('wfWatering').checked=!!cmd.watering_pump;
+      $('wfWater').checked=!!cmd.water_pump;
+    }
+    function clearGeminiBox(){
+      geminiDecisionTimestamp = null;
+      $('geminiMeta').textContent='Henüz uzman yorumu üretilmedi.';
+      $('geminiHeadline').textContent='Burada teknik özetten farklı olarak, kararı daha sade ve kullanıcı dostu bir uzman diliyle görebilirsin.';
+      $('geminiGrid').innerHTML = '<div class="ai-card"><div class="l">Bakış</div><div class="t">Bu alan, kararın daha doğal dille açıklanmış versiyonu için ayrıldı.</div></div><div class="ai-card"><div class="l">Amaç</div><div class="t">Kullanıcının sistemi teknik detay okumadan hızlıca anlamasına yardımcı olmak.</div></div>';
+      $('geminiText').className='ai-text subtle';
+      $('geminiText').textContent='İstersen bu karar için AI destekli örnek uzman yorumu oluşturabilirsin.';
+      $('geminiQuestion').value='';
+      $('geminiAnswer').textContent='Kullanıcı burada “Neden bu öneri verildi?” gibi kısa bir soru sorabilir.';
+    }
+    function setWhatIfEnabled(enabled){
+      $('whatIfBtn').disabled = !enabled;
+      ['wfFan','wfWatering','wfWater'].forEach(id => $(id).disabled = !enabled);
+      $('geminiBtn').disabled = !enabled;
+      $('geminiAskBtn').disabled = !enabled;
+    }
+
+    async function loadPlants(){
+      const data=await fetchJson(endpoints.plants);
+      if(!data) return;
+      $('plantSelect').innerHTML=(data.plants||[]).map(p=>`<option value="${p.id}">${p.label}</option>`).join('');
+      $('plantSelect').value=data.active_plant_type;
+    }
+
+    async function selectPlant(){
+      const plantType=$('plantSelect').value;
+      await fetchJson(endpoints.selectPlant,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plant_type:plantType})});
+      clearGeminiBox();
+      toast('Bitki türü güncellendi');
+      await refreshCurrent();
+    }
+
+    function compactSummary(text){
+      if(!text) return ['Yorum üretilemedi.'];
+      const cleaned = text.replace(/\s+/g,' ').trim();
+      const parts = cleaned.split('. ').map(s=>s.trim()).filter(Boolean).slice(0,3);
+      return parts.map(p=>p.endsWith('.')?p:(p+'.'));
+    }
+
+    function renderSummaryBox(text){
+      const items = compactSummary(text);
+      $('summaryBox').innerHTML = `<h5>Neden bu öneri?</h5><ul>${items.map(i=>`<li>${i}</li>`).join('')}</ul>`;
+    }
+
+    function renderUrgency(level, scenarioLabel){
+      const bar = $('urgencyBar');
+      if(level === 'OK'){ bar.className='urgency'; bar.textContent=''; return; }
+      const txt = level === 'WARNING'
+        ? `Dikkat: ${scenarioLabel} belirtileri var.`
+        : (level === 'CRITICAL'
+          ? `Kritik: ${scenarioLabel} için hızlı aksiyon öneriliyor.`
+          : `Acil: ${scenarioLabel} riski yüksek, şimdi müdahale et.`);
+      bar.className = `urgency show ${badgeClass(level)}`;
+      bar.textContent = txt;
+    }
+
+    function renderEmpty(){
+      hasCurrentData = false;
+      currentDecisionTimestamp = null;
+      setWhatIfEnabled(false);
+      $('statusLabel').textContent='Bekleniyor'; $('plantLabel').textContent='-'; $('scenarioLabel').textContent='Sensör verisi yok'; $('heroTime').textContent='-';
+      $('vTemp').textContent='-'; $('vHumidity').textContent='-'; $('vWater').textContent='-';
+      $('trendTempEta').textContent='Henüz veri yok';
+      $('trendHumidityEta').textContent='Henüz veri yok';
+      $('trendWaterEta').textContent='Henüz veri yok';
+      $('alertBadge').className='badge warning'; $('alertBadge').textContent='Sensör verisi bekleniyor';
+      $('highlightVisual').textContent='🌿'; $('highlightTitle').textContent='Sensör verisi bekleniyor'; $('highlightDetail').textContent='Veri geldiğinde en kritik adım burada.';
+      $('highlightCta').textContent='Öncelikli Adım';
+      $('urgencyBar').className='urgency'; $('urgencyBar').textContent='';
+      $('stepsList').innerHTML='<div class="step"><div class="n">1</div><div><b>Öneriler hazırlanıyor</b><span>Sensör verisi geldikten sonra adımlar burada listelenecek.</span></div></div>';
+      renderSummaryBox('Henüz sensörden veri gelmedi.');
+      $('sensorMeta').textContent='Henüz sensör verisi alınmadı.'; $('liveText').textContent='Sensör akışı bekleniyor';
+    }
+
+    function renderCurrent(d){
+      hasCurrentData = true;
+      currentDecisionTimestamp = d.timestamp || null;
+      setWhatIfEnabled(true);
+      $('lastUpdate').textContent=now(); $('heroTime').textContent=d.timestamp?new Date(d.timestamp).toLocaleTimeString('tr-TR'):now();
+      $('statusLabel').textContent=d.user_view?.status_label||labelMap(d.alert_level); $('plantLabel').textContent=d.user_view?.plant_label||'-'; $('scenarioLabel').textContent=d.user_view?.scenario_label||d.scenario;
+      $('vTemp').textContent=`${Number(d.sensor_data?.temperature||0).toFixed(1)}°C`; $('vHumidity').textContent=`${Number(d.sensor_data?.humidity||0).toFixed(1)}%`; $('vWater').textContent=`${Number(d.sensor_data?.water_level||0).toFixed(1)}%`;
+      const trend = d.ml_trend || {};
+      $('trendTempEta').textContent = trend.temperature?.eta_to_critical || 'Kritik eşik riski yok';
+      $('trendHumidityEta').textContent = trend.humidity?.eta_to_critical || 'Kritik eşik riski yok';
+      $('trendWaterEta').textContent = trend.water_level?.eta_to_critical || 'Kritik eşik riski yok';
+      $('alertBadge').className=`badge ${badgeClass(d.alert_level)}`; $('alertBadge').textContent=`Durum: ${labelMap(d.alert_level)}`;
+      const recs=d.user_view?.action_recommendations||[];
+      const top=recs[0]||{title:'Mevcut düzeni koru',detail:'Şimdilik kritik aksiyon gerekmiyor.',icon:'healthy-leaf'};
+      $('highlightVisual').textContent=actionVisual[top.icon]||'🌿'; $('highlightTitle').textContent=top.title; $('highlightDetail').textContent=top.detail;
+      $('highlightCta').textContent = d.alert_level === 'OK' ? 'Takibe Devam Et' : 'Şimdi Uygula';
+      renderUrgency(d.alert_level, d.user_view?.scenario_label||d.scenario);
+      const steps=(recs.length?recs:[top]).slice(0,3);
+      $('stepsList').innerHTML=steps.map((r,i)=>`<div class="step"><div class="n">${i+1}</div><div><b>${r.title}</b><span>${r.detail}</span></div></div>`).join('');
+      renderSummaryBox(d.user_view?.summary||d.decision_comment||'Yorum üretilemedi.');
+      if (geminiDecisionTimestamp && geminiDecisionTimestamp !== currentDecisionTimestamp) {
+        clearGeminiBox();
+      }
+      $('sensorMeta').textContent=`Son paket: ${d.timestamp||'-'} | Durum: ${labelMap(d.alert_level)} | Senaryo: ${d.user_view?.scenario_label||d.scenario}`;
+      $('liveText').textContent=`${labelMap(d.alert_level)} • ${d.user_view?.scenario_label||d.scenario}`;
+      const cmd=d.optimization?.recommended_command||{};
+      if (!whatIfDirty) applyRecommendedWhatIf(cmd);
+      if(d.user_view?.plant_type) $('plantSelect').value=d.user_view.plant_type;
+      if (d.air_quality) renderAirQuality(d.air_quality);
+    }
+
+    function renderAirQuality(aq){
+      if (!aq) {
+        $('airSource').textContent='Kaynak: -'; $('airCity').textContent='Şehir: -'; $('airNote').textContent='Not: Veri yok';
+        $('aqPm25').textContent='-'; $('aqPm10').textContent='-'; $('aqO3').textContent='-'; $('aqNo2').textContent='-';
+        return;
+      }
+      $('airSource').textContent=`Kaynak: ${aq.source || '-'}`;
+      $('airCity').textContent=`Şehir: ${aq.city || '-'}`;
+      if (aq.summary) {
+        $('aqPm25').textContent = aq.summary.pm25 ?? '-';
+        $('aqPm10').textContent = aq.summary.pm10 ?? '-';
+        $('aqO3').textContent = aq.summary.o3 ?? '-';
+        $('aqNo2').textContent = aq.summary.no2 ?? '-';
+        $('airNote').textContent = `Not: ${aq.note || 'Canlı veri'}`;
+        return;
+      }
+      $('aqPm25').textContent = '-'; $('aqPm10').textContent = '-'; $('aqO3').textContent = '-'; $('aqNo2').textContent = '-';
+      $('airNote').textContent = `Not: Veri alındı (${aq.fetched_at || '-'})`;
+    }
+
+    function renderWhatIf(d){
+      if(!d){
+        $('wfTemp').textContent='-';$('wfHumidity').textContent='-';$('wfWaterLevel').textContent='-';
+        $('wfTempDelta').textContent='-'; $('wfHumidityDelta').textContent='-'; $('wfWaterDelta').textContent='-';
+        $('wfBadge').className='wf-pill warning'; $('wfBadge').textContent='Bekleniyor';
+        $('wfMain').textContent='Tahmin için sensör verisi bekleniyor';
+        $('wfWarningBox').className='wf-warning';
+        $('wfWarningBox').innerHTML='';
+        $('wfSummary').innerHTML='<h5>Kısa Yorum</h5><ul><li>Sensör verisi geldikten sonra etki analizi otomatik güncellenecek.</li></ul>';
+        return;
+      }
+      $('wfTemp').textContent=`${Number(d.predicted_state?.temperature||0).toFixed(1)}°C`; $('wfHumidity').textContent=`${Number(d.predicted_state?.humidity||0).toFixed(1)}%`; $('wfWaterLevel').textContent=`${Number(d.predicted_state?.water_level||0).toFixed(1)}%`;
+      const curTemp = Number(($('vTemp').textContent||'0').replace('°C','')) || 0;
+      const curHum = Number(($('vHumidity').textContent||'0').replace('%','')) || 0;
+      const curWl = Number(($('vWater').textContent||'0').replace('%','')) || 0;
+      const pTemp = Number(d.predicted_state?.temperature||0);
+      const pHum = Number(d.predicted_state?.humidity||0);
+      const pWl = Number(d.predicted_state?.water_level||0);
+      const deltaTxt = (x, unit) => Math.abs(x) < 0.1 ? `değişim yok` : (x > 0 ? `+${x.toFixed(1)}${unit}` : `${x.toFixed(1)}${unit}`);
+      $('wfTempDelta').textContent = `Şu ana göre: ${deltaTxt(pTemp-curTemp,'°C')}`;
+      $('wfHumidityDelta').textContent = `Şu ana göre: ${deltaTxt(pHum-curHum,'%')}`;
+      $('wfWaterDelta').textContent = `Şu ana göre: ${deltaTxt(pWl-curWl,'%')}`;
+
+      const lvl=d.expected_alert_level||'OK';
+      $('wfBadge').className=`wf-pill ${badgeClass(lvl)}`;
+      $('wfBadge').textContent=labelMap(lvl);
+      $('wfMain').textContent=`${d.expected_scenario||'-'} senaryosu bekleniyor`;
+      const warnings = d.warnings || [];
+      if (warnings.length) {
+        $('wfWarningBox').className='wf-warning show';
+        $('wfWarningBox').innerHTML = `<h5>Riskli Seçim Uyarısı</h5><ul>${warnings.map(w=>`<li>${w}</li>`).join('')}</ul>`;
+      } else {
+        $('wfWarningBox').className='wf-warning';
+        $('wfWarningBox').innerHTML = '';
+      }
+      const raw = (d.summary||'Tahmin üretilemedi.').replace(/\s+/g,' ').trim();
+      const parts = raw.split('. ').map(s=>s.trim()).filter(Boolean).slice(0,3).map(s=>s.endsWith('.')?s:(s+'.'));
+      $('wfSummary').innerHTML = `<h5>Kısa Yorum</h5><ul>${parts.map(p=>`<li>${p}</li>`).join('')}</ul>`;
+    }
+
+    async function refreshCurrent(){const d=await fetchJson(endpoints.current); if(!d){renderEmpty(); renderWhatIf(null); return;} renderCurrent(d); const wf=await fetchJson(endpoints.whatIf,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(currentWhatIfPayload())}); renderWhatIf(wf);}
+    async function refreshWhatIf(){const d=await fetchJson(endpoints.whatIf,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(currentWhatIfPayload())}); renderWhatIf(d);}
+    async function fetchGeminiExplanation(){
+      const data = await fetchJson(endpoints.explain,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({language:'tr'})});
+      $('geminiMeta').textContent = data.source === 'gemini'
+        ? `Kaynak: Gemini${data.model ? ` (${data.model})` : ''}`
+        : 'Kaynak: AI tarzı örnek uzman yorumu';
+      $('geminiHeadline').textContent = data.headline || 'Uzman okuması hazır.';
+      if (Array.isArray(data.sections) && data.sections.length) {
+        $('geminiGrid').innerHTML = data.sections.map(section =>
+          `<div class="ai-card"><div class="l">${section.label || 'Not'}</div><div class="t">${section.text || ''}</div></div>`
+        ).join('');
+      } else {
+        $('geminiGrid').innerHTML = '';
+      }
+      $('geminiText').className='ai-text';
+      $('geminiText').textContent = (Array.isArray(data.sections) && data.sections.length)
+        ? 'Kısa sonuç: Bu yorum, teknik özeti daha anlaşılır hale getirmek için sadeleştirilmiş uzman anlatımıdır.'
+        : (data.explanation || 'Açıklama üretilemedi.');
+      geminiDecisionTimestamp = currentDecisionTimestamp;
+    }
+    async function fetchGeminiAnswer(){
+      const question = $('geminiQuestion').value.trim();
+      if (!question) {
+        $('geminiAnswer').textContent = 'Önce kısa bir soru yaz.';
+        return;
+      }
+      $('geminiAskBtn').disabled = true;
+      $('geminiAnswer').textContent = 'Yanıt hazırlanıyor...';
+      try {
+        const data = await fetchJson(endpoints.ask,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({language:'tr',question})});
+        $('geminiMeta').textContent = data.source === 'vertex-gemini'
+          ? `Kaynak: Vertex Gemini${data.model ? ` (${data.model})` : ''}`
+          : 'Kaynak: AI tarzı örnek uzman yanıtı';
+        $('geminiAnswer').textContent = data.answer || 'Yanıt üretilemedi.';
+      } catch (e) {
+        $('geminiAnswer').textContent = `Yanıt alınamadı: ${e.message}`;
+        throw e;
+      } finally {
+        $('geminiAskBtn').disabled = !hasCurrentData;
+      }
+    }
+
+    $('whatIfBtn').addEventListener('click',()=>{
+      if (!hasCurrentData) return;
+      setTab('whatif');
+      whatIfDirty = true;
+      refreshWhatIf().catch(e=>toast(`Hata: ${e.message}`));
+    });
+    ['wfFan','wfWatering','wfWater'].forEach(id=>$(id).addEventListener('change',()=>{
+      if (!hasCurrentData) return;
+      whatIfDirty = true;
+      refreshWhatIf().catch(e=>toast(`Hata: ${e.message}`));
+    }));
+    document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click', ()=>setTab(btn.dataset.tab)));
+    $('plantSelect').addEventListener('change',()=>selectPlant().catch(e=>toast(`Hata: ${e.message}`)));
+    $('geminiBtn').addEventListener('click',()=>fetchGeminiExplanation().catch(e=>toast(`Hata: ${e.message}`)));
+    $('geminiAskBtn').addEventListener('click',()=>fetchGeminiAnswer().catch(e=>toast(`Hata: ${e.message}`)));
+    $('demoBtn').addEventListener('click', async ()=> {
+      try {
+        setTab('live');
+        whatIfDirty = false;
+        clearGeminiBox();
+        const scenario = $('demoScenario').value || 'mixed';
+        const res = await fetchJson(`${endpoints.demoNext}?scenario=${encodeURIComponent(scenario)}`, { method:'POST' });
+        toast(`Demo veri: ${res.scenario} • ${res.top_recommendation || res.alert_level}`);
+        await refreshCurrent();
+      } catch(e){ toast(`Hata: ${e.message}`); }
+    });
+    $('airBtn').addEventListener('click', async ()=> {
+      try {
+        setTab('air');
+        const aq = await fetchJson(`${endpoints.air}?city=Istanbul&country=TR`);
+        renderAirQuality(aq);
+        toast('Hava kalitesi güncellendi');
+      } catch(e){ toast(`Hata: ${e.message}`); }
+    });
+
+    setInterval(()=>refreshCurrent().catch(e=>toast(`Bağlantı hatası: ${e.message}`)),4000);
+    (async function init(){try{await loadPlants(); await refreshCurrent();}catch(e){renderEmpty();}})();
+  </script>
+</body>
+</html>
