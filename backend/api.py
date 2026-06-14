@@ -550,53 +550,59 @@ def _generate_gemini_explanation(decision: dict, language: str = "en") -> dict:
             "note": "Gemini API key bulunamadi; yerel ozet gosterildi.",
         }
 
-    model = "gemini-2.5-flash"
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
-    body = {
-        "contents": [
-            {
-                "parts": [
-                    {
-                        "text": _build_gemini_prompt(decision, language),
-                    }
-                ]
-            }
-        ]
-    }
-    req = Request(
-        url,
-        data=json.dumps(body).encode("utf-8"),
-        headers={
-            "Content-Type": "application/json",
-            "x-goog-api-key": api_key,
-        },
-        method="POST",
-    )
+    models_to_try = ["gemini-3.5-flash", "gemini-3.0-flash", "gemini-2.5-flash"]
+    last_exception = None
 
-    try:
-        with urlopen(req, timeout=12) as resp:
-            payload = json.loads(resp.read().decode("utf-8"))
-        explanation = _extract_gemini_text(payload)
-        if not explanation:
-            raise ValueError("Gemini bos aciklama dondurdu")
-        return {
-            "source": "gemini",
-            "model": model,
-            "generated_at": datetime.now().isoformat(),
-            "explanation": explanation,
-            "note": None,
+    for model in models_to_try:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+        body = {
+            "contents": [
+                {
+                    "parts": [
+                        {
+                            "text": _build_gemini_prompt(decision, language),
+                        }
+                    ]
+                }
+            ]
         }
-    except Exception:
-        fallback = _gemini_fallback_sections(decision, language)
-        return {
-            "source": "local-fallback",
-            "model": model,
-            "generated_at": datetime.now().isoformat(),
-            "explanation": _gemini_fallback_explanation(decision, language),
-            "headline": fallback["headline"],
-            "sections": fallback["sections"],
-            "note": "Gemini erisimi basarisiz oldugu icin yerel ozet gosterildi.",
-        }
+        req = Request(
+            url,
+            data=json.dumps(body).encode("utf-8"),
+            headers={
+                "Content-Type": "application/json",
+                "x-goog-api-key": api_key,
+            },
+            method="POST",
+        )
+
+        try:
+            with urlopen(req, timeout=12) as resp:
+                payload = json.loads(resp.read().decode("utf-8"))
+            explanation = _extract_gemini_text(payload)
+            if not explanation:
+                raise ValueError("Gemini bos aciklama dondurdu")
+            return {
+                "source": "gemini",
+                "model": model,
+                "generated_at": datetime.now().isoformat(),
+                "explanation": explanation,
+                "note": None,
+            }
+        except Exception as e:
+            print(f"[Gemini API] Model {model} explanation üretirken başarısız oldu: {e}")
+            last_exception = e
+
+    fallback = _gemini_fallback_sections(decision, language)
+    return {
+        "source": "local-fallback",
+        "model": "gemini-2.5-flash",
+        "generated_at": datetime.now().isoformat(),
+        "explanation": _gemini_fallback_explanation(decision, language),
+        "headline": fallback["headline"],
+        "sections": fallback["sections"],
+        "note": f"Gemini modelleri başarısız oldu (Son hata: {last_exception}). Yerel özet gösterildi.",
+    }
 
 
 def _generate_gemini_answer(decision: dict, question: str, language: str = "en") -> dict:
@@ -638,49 +644,55 @@ def _generate_gemini_answer(decision: dict, question: str, language: str = "en")
             "note": "Gemini API key bulunamadi; ornek yanit gosterildi.",
         }
 
-    model = "gemini-2.5-flash"
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
-    body = {
-        "contents": [
-            {
-                "parts": [
-                    {
-                        "text": _build_gemini_question_prompt(decision, question, language),
-                    }
-                ]
+    models_to_try = ["gemini-3.5-flash", "gemini-3.0-flash", "gemini-2.5-flash"]
+    last_exception = None
+
+    for model in models_to_try:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+        body = {
+            "contents": [
+                {
+                    "parts": [
+                        {
+                            "text": _build_gemini_question_prompt(decision, question, language),
+                        }
+                    ]
+                }
+            ]
+        }
+        req = Request(
+            url,
+            data=json.dumps(body).encode("utf-8"),
+            headers={
+                "Content-Type": "application/json",
+                "x-goog-api-key": api_key,
+            },
+            method="POST",
+        )
+        try:
+            with urlopen(req, timeout=12) as resp:
+                payload = json.loads(resp.read().decode("utf-8"))
+            answer = _extract_gemini_text(payload)
+            if not answer:
+                raise ValueError("Gemini bos yanit dondurdu")
+            return {
+                "source": "gemini",
+                "model": model,
+                "generated_at": datetime.now().isoformat(),
+                "answer": answer,
+                "note": None,
             }
-        ]
+        except Exception as e:
+            print(f"[Gemini API] Model {model} soru yanıtlarken başarısız oldu: {e}")
+            last_exception = e
+
+    return {
+        "source": "local-fallback",
+        "model": "gemini-2.5-flash",
+        "generated_at": datetime.now().isoformat(),
+        "answer": _gemini_fallback_answer(decision, question, language),
+        "note": f"Gemini modelleri başarısız oldu (Son hata: {last_exception}). Örnek yanıt gösterildi.",
     }
-    req = Request(
-        url,
-        data=json.dumps(body).encode("utf-8"),
-        headers={
-            "Content-Type": "application/json",
-            "x-goog-api-key": api_key,
-        },
-        method="POST",
-    )
-    try:
-        with urlopen(req, timeout=12) as resp:
-            payload = json.loads(resp.read().decode("utf-8"))
-        answer = _extract_gemini_text(payload)
-        if not answer:
-            raise ValueError("Gemini bos yanit dondurdu")
-        return {
-            "source": "gemini",
-            "model": model,
-            "generated_at": datetime.now().isoformat(),
-            "answer": answer,
-            "note": None,
-        }
-    except Exception:
-        return {
-            "source": "local-fallback",
-            "model": model,
-            "generated_at": datetime.now().isoformat(),
-            "answer": _gemini_fallback_answer(decision, question, language),
-            "note": "Gemini erisimi basarisiz oldugu icin ornek yanit gosterildi.",
-        }
 
 
 @app.get("/")
